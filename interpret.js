@@ -5,14 +5,14 @@ export const interpret = stmts => new ASTInterpreter().interpret(stmts);
 export const execute = stmt => new ASTInterpreter().execute(stmt);
 export const evaluate = ast => new ASTInterpreter().evaluate(ast);
 
-class LoxRuntimeError extends Error {
+export class LoxRuntimeError extends Error {
   constructor(token, ...args) {
     super(...args);
     this.token = token;
   }
 }
 
-class ASTInterpreter extends AstVisitor {
+export class ASTInterpreter extends AstVisitor {
   constructor() {
     super();
     this.env = new Environment();

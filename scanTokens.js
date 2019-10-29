@@ -3,7 +3,7 @@ import {Token} from './token';
 import {TokenType} from './tokenType';
 
 
-class LexError extends Error {
+export class LexError extends Error {
   constructor(line, ...args) {
     super(...args);
     this.line = line;

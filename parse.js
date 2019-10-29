@@ -1,11 +1,21 @@
 import {TokenType} from './tokenType';
 import {Expr, Stmt} from './nodes';
 
+export const guessTokensAreExpr = tokens => {
+  if (tokens[tokens.length - 2].type === TokenType.SEMICOLON ||
+      tokens[tokens.length - 2].type === TokenType.RIGHT_BRACE) {
+    return false;
+  }
+  return true;
+}
+
+// Always returns an array of statements
 export const parse = tokens => {
   const p = new Parser(tokens);
   return p.parse();
 }
 
+// Always returns a single expression
 export const parseExpr = tokens => {
   const p = new Parser(tokens);
   return p.parseExpr();
