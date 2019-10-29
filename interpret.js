@@ -1,4 +1,5 @@
 import {AstVisitor} from './astVisitor';
+import {TokenType} from './tokenType';
 
 export const interpret = stmts => new ASTInterpreter().interpret(stmts);
 export const execute = stmt => new ASTInterpreter().execute(stmt);
@@ -17,11 +18,9 @@ class ASTInterpreter extends AstVisitor {
     this.env = new Environment();
   }
   interpret(stmts) {
-    this.outputs = [];
     for (let stmt of stmts) {
       this.execute(stmt);
     }
-    return this.outputs;
   }
   execute(stmt) {
     return stmt.accept(this);
@@ -65,7 +64,7 @@ class ASTInterpreter extends AstVisitor {
   }
   visit_PrintStmt(stmt) {
     const value = this.evaluate(stmt.expression);
-    this.outputs.push(this.stringify(value));
+    console.log(this.stringify(value));
   }
   visit_ExpressionStmt(stmt) {
     this.evaluate(stmt.expression);

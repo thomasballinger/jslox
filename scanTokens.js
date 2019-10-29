@@ -3,13 +3,13 @@ import {Token} from './token';
 import {TokenType} from './tokenType';
 
 
-class ParseError extends Error {
-  constructor(token, ...args) {
+class LexError extends Error {
+  constructor(line, ...args) {
     super(...args);
-    this.token = token;
+    this.line = line;
   }
   toString() {
-    return `${this.message} at ${this.token}`;
+    return `${this.message} at line ${this.line}`;
   }
 }
 
@@ -50,7 +50,7 @@ export const scanTokens = source => {
 
     // Unterminated string.
     if (isAtEnd()) {
-      throw ParseError(source[source.length - 1], "Unterminated string.");
+      throw LexError(line, "Unterminated string");
       return;
     }
 
@@ -169,7 +169,7 @@ export const scanTokens = source => {
         } else if (isAlpha(c)) {
           identifier();
         } else {
-          reportError(line, "Unexpected character.");
+          throw new LexError(line, `Unexpected character '${c}'`)
         }
         break;
     }
