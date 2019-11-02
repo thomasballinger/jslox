@@ -1,4 +1,3 @@
-require('esm');
 const readlineSync = require('readline-sync');
 const fs = require('fs');
 
@@ -7,12 +6,16 @@ import {scanTokens, LexError} from './scanTokens';
 import {parse, parseExpr, ParseError, guessTokensAreExpr} from './parse';
 import {interpret, ASTInterpreter, LoxRuntimeError} from './interpret';
 
+// yarn must be run from the package directory, but scripts should
+// be run where they were run
+const SAVED_WORKING_DIRECTORY = process.env['SAVED_WORKING_DIRECTORY']
+if (SAVED_WORKING_DIRECTORY && SAVED_WORKING_DIRECTORY.length) {
+  process.chdir(SAVED_WORKING_DIRECTORY);
+}
 
 
 function main() {
-  console.log(arguments);
   const args = [...arguments];
-  console.log(args.length);
   if (args.length > 1) {
     return 'Pass a string to main';
   } else if (args.length == 1) {

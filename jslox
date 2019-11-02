@@ -1,0 +1,6 @@
+# wrapper for jslox to be used for writing scripts in lox
+# necessary because yarn/npm change directory to the project dir,
+# but scripts should be run in the directory they are run in!
+
+pwd=$(pwd)
+SAVED_WORKING_DIRECTORY=$pwd yarn --cwd /Users/tomb/proglang/jslox/ --silent repl "$@"

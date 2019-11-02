@@ -2,6 +2,7 @@
   "name": "jslox-as-of-chapter-9",
   "version": "1.0.0",
   "main": "main.js",
+  "private": true,
   "scripts": {
     "repl": "node -r esm main.js",
     "prettier": "prettier --write **/*.js",

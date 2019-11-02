@@ -149,6 +149,9 @@ export const scanTokens = source => {
           addToken(TokenType.SLASH);
         }
         break;
+      case '#': {
+        while (peek() != '\n' && !isAtEnd()) advance();
+      }
       case ' ':
       case '\r':
       case '\t':
