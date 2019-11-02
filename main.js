@@ -1,3 +1,4 @@
+require('esm');
 const readlineSync = require('readline-sync');
 const fs = require('fs');
 

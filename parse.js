@@ -1,25 +1,27 @@
-import {TokenType} from './tokenType';
-import {Expr, Stmt} from './nodes';
+import { TokenType } from "./tokenType";
+import { Expr, Stmt } from "./nodes";
 
 export const guessTokensAreExpr = tokens => {
-  if (tokens[tokens.length - 2].type === TokenType.SEMICOLON ||
-      tokens[tokens.length - 2].type === TokenType.RIGHT_BRACE) {
+  if (
+    tokens[tokens.length - 2].type === TokenType.SEMICOLON ||
+    tokens[tokens.length - 2].type === TokenType.RIGHT_BRACE
+  ) {
     return false;
   }
   return true;
-}
+};
 
 // Always returns an array of statements
 export const parse = tokens => {
   const p = new Parser(tokens);
   return p.parse();
-}
+};
 
 // Always returns a single expression
 export const parseExpr = tokens => {
   const p = new Parser(tokens);
   return p.parseExpr();
-}
+};
 
 export class ParseError extends Error {
   constructor(token, ...args) {
@@ -48,14 +50,36 @@ export class Parser {
   parseExpr() {
     const expr = this.expression();
     if (!this.isAtEnd()) {
-      this.error(this.peek(), 'could parse rest of tokens');
+      this.error(this.peek(), "could parse rest of tokens");
     }
     return expr;
   }
 
   declaration() {
+    if (this.match(TokenType.FUN)) return this.fun();
     if (this.match(TokenType.VAR)) return this.varDeclaration();
     return this.statement();
+  }
+
+  fun(kind) {
+    if (kind === undefined) {
+      kind = "function";
+    }
+    const name = this.consume(TokenType.IDENTIFIER, "Expected function name");
+    this.consume(TokenType.LEFT_PAREN, `Expected '(' after ${kind} name.`);
+    const parameters = [];
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      do {
+        parameters.push(
+          this.consume(TokenType.IDENTIFIER, "Expected parameter name.")
+        );
+      } while (this.match(TokenType.COMMA));
+    }
+    this.consume(TokenType.RIGHT_PAREN, "Expected ')' after parameters.");
+
+    this.check(TokenType.LEFT_BRACE, "Expected '{' before ${kind} body");
+    const body = this.block();
+    return new Stmt.Function(name, parameters, body);
   }
 
   varDeclaration() {
@@ -78,6 +102,7 @@ export class Parser {
     if (this.check(TokenType.WHILE)) return this.whileStatement();
     if (this.check(TokenType.FOR)) return this.forStatement();
     if (this.check(TokenType.PRINT)) return this.printStatement();
+    if (this.check(TokenType.RETURN)) return this.returnStatement();
     if (this.check(TokenType.LEFT_BRACE)) return this.block();
     return this.expressionStatement();
   }
@@ -105,10 +130,23 @@ export class Parser {
     return new Stmt.Print(value);
   }
 
+  returnStatement() {
+    const keyword = this.consume(
+      TokenType.RETURN,
+      "logic error: returnStatement called when next token was not RETURN"
+    );
+    let value = null;
+    if (!this.check(TokenType.SEMICOLON)) {
+      value = this.expression();
+    }
+    this.consume(TokenType.SEMICOLON, "Expected ';' after return.");
+    return new Stmt.Return(keyword, value);
+  }
+
   ifStatement() {
     this.consume(
       TokenType.IF,
-      "logic error: ifStatement called when next token was not PRINT"
+      "logic error: ifStatement called when next token was not IF"
     );
     this.consume(TokenType.LEFT_PAREN, "expected '(' after 'if'");
     const condition = this.expression();
@@ -198,7 +236,7 @@ export class Parser {
         return new Expr.Assign(expr.name, value);
       }
 
-      error(equals, "Invalid assignment target.");
+      this.error(equals, "Invalid assignment target.");
     }
 
     return expr;
@@ -290,7 +328,37 @@ export class Parser {
       return new Expr.Unary(operator, right);
     }
 
-    return this.primary();
+    return this.call();
+  }
+
+  call() {
+    let expr = this.primary();
+
+    while (true) {
+      if (this.match(TokenType.LEFT_PAREN)) {
+        expr = this.finishCall(expr);
+      } else {
+        break;
+      }
+    }
+
+    return expr;
+  }
+
+  finishCall(callee) {
+    const args = [];
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      do {
+        args.push(this.expression());
+      } while (this.match(TokenType.COMMA));
+    }
+
+    const paren = this.consume(
+      TokenType.RIGHT_PAREN,
+      "Expected ')' after arguments."
+    );
+
+    return new Expr.Call(callee, paren, args);
   }
 
   primary() {

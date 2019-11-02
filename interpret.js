@@ -12,10 +12,110 @@ export class LoxRuntimeError extends Error {
   }
 }
 
+class ReturnException extends Error {
+  constructor(value, ...args) {
+    super(...args);
+    this.value = value;
+  }
+}
+
+class LoxCallable {
+  call(interpreter, args) {
+    throw Error(`Whoops implementor error, no call implementation on ${this}`);
+  }
+  arity() {
+    throw Error(`Whoops implementor error, no arity implementation on ${this}`);
+  }
+}
+
+const globals = ({
+  clock: class clock extends LoxCallable {
+    arity() {
+      return 0;
+    }
+    call(interp, args) {
+      return performance.now() / 1000;
+    }
+  }
+})
+
+class LoxFunction extends LoxCallable {
+  constructor(declaration, closure) {
+    super();
+    this.declaration = declaration;
+    this.closure = closure;
+  }
+  call(interp, args) {
+    const env = new Environment(this.closure);
+    for (let i = 0; i < this.declaration.params.length; i++) {
+      env.define(this.declaration.params[i].lexeme, args[i]);
+    }
+    try {
+      interp.executeBlock(this.declaration.body.statements, env);
+    } catch (err) {
+      if (err instanceof ReturnException) {
+        return err.value;
+      }
+      throw err;
+    }
+  }
+
+  arity() {
+    return this.declaration.params.length;
+  }
+
+  toString() {
+    return `<fn ${this.declaration.name.lexeme} >`;
+  }
+}
+
+class Environment {
+  constructor(enclosing) {
+    this.enclosing = enclosing;
+    this.values = new Map();
+  }
+  get(name) {
+    if (this.values.has(name.lexeme)) {
+      const val = this.values.get(name.lexeme);
+      return val;
+    }
+
+    if (this.enclosing) return this.enclosing.get(name);
+
+    throw new LoxRuntimeError(name.lexeme, `Undefined variable ${name.lexeme}`);
+  }
+
+  assign(name, value) {
+    if (this.values.has(name.lexeme)) {
+      this.values.set(name.lexeme, value);
+      return;
+    }
+
+    if (this.enclosing) return this.enclosing.assign(name, value);
+
+    throw new LoxRuntimeError(
+      name.lexeme,
+      `Undefined variable ${name.lexeme})`
+    );
+  }
+
+  define(name, value) {
+    this.values.set(name, value);
+  }
+
+  toString() {
+    return `Env(${this.Map})`;
+  }
+}
+
 export class ASTInterpreter extends AstVisitor {
   constructor() {
     super();
-    this.env = new Environment();
+    this.globals = new Environment();
+    Object.keys(globals).forEach(name =>
+      this.globals.define(name, new globals[name]())
+    );
+    this.env = new Environment(this.globals);
   }
   interpret(stmts) {
     for (let stmt of stmts) {
@@ -38,6 +138,10 @@ export class ASTInterpreter extends AstVisitor {
     } finally {
       this.env = prevEnv;
     }
+  }
+  visit_FunctionStmt(stmt) {
+    const fun = new LoxFunction(stmt, this.env);
+    this.env.define(stmt.name.lexeme, fun);
   }
   visit_IfStmt(stmt) {
     if (this.isTruthy(this.evaluate(stmt.condition))) {
@@ -62,9 +166,38 @@ export class ASTInterpreter extends AstVisitor {
 
     this.env.define(stmt.name.lexeme, value);
   }
+  visit_ReturnStmt(stmt) {
+    let value = null;
+    if (stmt.value) {
+      value = this.evaluate(stmt.value);
+    }
+
+    throw new ReturnException(value);
+  }
   visit_PrintStmt(stmt) {
     const value = this.evaluate(stmt.expression);
     console.log(this.stringify(value));
+  }
+  visit_CallExpr(expr) {
+    const callee = this.evaluate(expr.callee);
+
+    const args = [];
+    for (let arg of expr.args) {
+      args.push(this.evaluate(arg));
+    }
+    if (!(callee instanceof LoxCallable)) {
+      throw new LoxRuntimeError(null, `Not callable ${callee}`);
+    }
+
+    if (args.length !== callee.arity()) {
+      throw new LoxRuntimeError(
+        null,
+        `Function ${callee} called with ${
+          args.length
+        }, expected ${callee.arity()}`
+      );
+    }
+    return callee.call(this, args);
   }
   visit_ExpressionStmt(stmt) {
     this.evaluate(stmt.expression);
@@ -99,7 +232,9 @@ export class ASTInterpreter extends AstVisitor {
         } else {
           throw new LoxRuntimeError(
             expr.operator,
-            `+ expects two strings or two numbers`
+            `+ expects two strings or two numbers, not ${JSON.stringify(
+              left
+            )} and ${JSON.stringify(right)}`
           );
         }
       case TokenType.MINUS:
@@ -160,47 +295,5 @@ export class ASTInterpreter extends AstVisitor {
   }
   stringify(value) {
     return '' + value;
-  }
-}
-
-class Environment {
-  constructor(enclosing) {
-    this.enclosing = enclosing;
-    this.values = new Map();
-  }
-  get(name) {
-    if (this.values.has(name.lexeme)) {
-      const val = this.values.get(name.lexeme);
-      return val;
-    }
-
-    if (this.enclosing) return this.enclosing.get(name);
-
-    throw new LoxRuntimeError(
-      name.lexeme,
-      `Undefined variable ${name.lexeme})`
-    );
-  }
-
-  assign(name, value) {
-    if (this.values.has(name.lexeme)) {
-      this.values.set(name.lexeme, value);
-      return;
-    }
-
-    if (this.enclosing) return this.enclosing.assign(name, value);
-
-    throw new LoxRuntimeError(
-      name.lexeme,
-      `Undefined variable ${name.lexeme})`
-    );
-  }
-
-  define(name, value) {
-    this.values.set(name, value);
-  }
-
-  toString() {
-    return `Env(${this.Map})`;
   }
 }

@@ -16,6 +16,9 @@ export class Expr {
     visit_BinaryExpr() {
       throw Error(`visit method "visit_BinaryExpr" not implemented on ${this.constructor.name}`);
     }
+    visit_CallExpr() {
+      throw Error(`visit method "visit_CallExpr" not implemented on ${this.constructor.name}`);
+    }
     visit_GroupingExpr() {
       throw Error(`visit method "visit_GroupingExpr" not implemented on ${this.constructor.name}`);
     }
@@ -58,6 +61,19 @@ export class Expr {
     }
   }
   Expr.Binary = Binary;
+
+  class Call extends Expr {
+    constructor(callee, paren, args) {
+      super();
+      this.callee = callee;
+      this.paren = paren;
+      this.args = args;
+    }
+    accept(visitor) {
+      return visitor.visit_CallExpr(this);
+    }
+  }
+  Expr.Call = Call;
 
   class Grouping extends Expr {
     constructor(expression) {
@@ -135,11 +151,17 @@ export class Stmt {
     visit_ExpressionStmt() {
       throw Error(`visit method "visit_ExpressionStmt" not implemented on ${this.constructor.name}`);
     }
+    visit_FunctionStmt() {
+      throw Error(`visit method "visit_FunctionStmt" not implemented on ${this.constructor.name}`);
+    }
     visit_ForStmt() {
       throw Error(`visit method "visit_ForStmt" not implemented on ${this.constructor.name}`);
     }
     visit_IfStmt() {
       throw Error(`visit method "visit_IfStmt" not implemented on ${this.constructor.name}`);
+    }
+    visit_ReturnStmt() {
+      throw Error(`visit method "visit_ReturnStmt" not implemented on ${this.constructor.name}`);
     }
     visit_PrintStmt() {
       throw Error(`visit method "visit_PrintStmt" not implemented on ${this.constructor.name}`);
@@ -175,6 +197,19 @@ export class Stmt {
   }
   Stmt.Expression = Expression;
 
+  class Function extends Stmt {
+    constructor(name, params, body) {
+      super();
+      this.name = name;
+      this.params = params;
+      this.body = body;
+    }
+    accept(visitor) {
+      return visitor.visit_FunctionStmt(this);
+    }
+  }
+  Stmt.Function = Function;
+
   class For extends Stmt {
     constructor(initializer, condition, increment, body) {
       super();
@@ -201,6 +236,18 @@ export class Stmt {
     }
   }
   Stmt.If = If;
+
+  class Return extends Stmt {
+    constructor(keyword, value) {
+      super();
+      this.keyword = keyword;
+      this.value = value;
+    }
+    accept(visitor) {
+      return visitor.visit_ReturnStmt(this);
+    }
+  }
+  Stmt.Return = Return;
 
   class Print extends Stmt {
     constructor(expression) {

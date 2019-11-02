@@ -38,8 +38,25 @@ class ASTPrinter extends Expr.Visitor {
   visit_ExpressionStmt(stmt) {
     return `${stmt.expression.accept(this)}`;
   }
+  visit_ReturnStmt(stmt) {
+    if (stmt.value) {
+      return `(return ${stmt.value.accept(this)})`;
+    } else {
+      return 'return';
+    }
+  }
   visit_PrintStmt(stmt) {
     return `(print ${stmt.expression.accept(this)})`;
+  }
+  visit_FunctionStmt(stmt) {
+    return `(function ${stmt.name.lexeme} (${stmt.params.join(
+      ', '
+    )}) ${stmt.body.accept(this)})`;
+  }
+  visit_CallExpr(expr) {
+    return `(call ${expr.callee.accept(this)} on ${expr.args
+      .map(x => x.accept(this))
+      .join(', ')})`;
   }
   visit_VariableExpr(expr) {
     return `(lookup ${expr.name.lexeme})`;

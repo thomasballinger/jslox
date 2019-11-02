@@ -4,6 +4,7 @@ const fs = require('fs');
 const exprCode = defineAst("Expr", [
   "Assign   : name, value",
   "Binary   : left, operator, right",
+  "Call     : callee, paren, args",
   "Grouping : expression",
   "Literal  : value",
   "Logical  : left, operator, right",
@@ -14,8 +15,10 @@ const exprCode = defineAst("Expr", [
 const stmtCode = defineAst("Stmt", [
   "Block      : statements",
   "Expression : expression",
+  "Function   : name, params, body",
   "For        : initializer, condition, increment, body",
   "If         : condition, thenBranch, elseBranch",
+  "Return     : keyword, value",
   "Print      : expression",
   "Var        : name, initializer",
   "While      : condition, body"

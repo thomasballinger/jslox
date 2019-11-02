@@ -1,9 +1,9 @@
 {
   "name": "jslox-as-of-chapter-9",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
-    "repl": "node -r esm index.js",
+    "repl": "node -r esm main.js",
     "prettier": "prettier --write **/*.js",
     "generate": "node -r esm tool/generate.js"
   },

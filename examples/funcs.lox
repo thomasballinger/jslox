@@ -1,0 +1,11 @@
+
+var a = 1;
+fun foo(x) {
+    var a = 20;
+    print x;
+    while (x < a) {
+        return foo(x + 1);
+    }
+}
+
+foo(10);
